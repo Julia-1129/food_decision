@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>食在難選 - 今天吃什麼？幸運美食決策輪盤</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome 圖標 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas-Confetti 灑花特效 -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cream: {
+                            50: '#fffdf9',
+                            100: '#fdfbf7',
+                            200: '#f7f3eb',
+                        },
+                        amber: {
+                            500: '#f59e0b',
+                        }
+                    },
+                    animation: {
+                        'friendly-pulse': 'friendly-pulse 2s infinite',
+                        'bounce-subtle': 'bounce-subtle 1.5s infinite',
+                    },
+                    keyframes: {
+                        'friendly-pulse': {
+                            '0%, 100%': { transform: 'scale(1)' },
+                            '50%': { transform: 'scale(1.06)' },
+                        },
+                        'bounce-subtle': {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-4px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #fdfbf7;
+        }
+        /* 美食風格自訂滾動條 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f7f3eb;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #fcd34d;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #fbbf24;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col justify-between selection:bg-orange-100 selection:text-orange-700">
+
+    <!-- 歡迎/開場畫面 (Splash Screen) -->
+    <div id="welcome-screen" class="fixed inset-0 bg-gradient-to-br from-amber-50 via-cream-100 to-orange-50 z-50 flex flex-col items-center justify-center p-4 transition-all duration-700 overflow-hidden">
+        <!-- 裝飾背景柔光大圓 -->
+        <div class="absolute -top-20 -left-20 w-72 h-72 bg-orange-200/50 rounded-full filter blur-3xl"></div>
+        <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-amber-200/50 rounded-full filter blur-3xl"></div>
+        
+        <div class="max-w-md w-full text-center space-y-6 p-8 bg-white/90 backdrop-blur-md rounded-3xl border border-orange-100/50 shadow-[0_20px_50px_rgba(253,237,222,0.6)] relative z-10">
+            
+            <div class="relative z-10 space-y-5">
+                <!-- 脈衝動畫美食 Icon -->
+                <div class="w-20 h-20 mx-auto bg-gradient-to-tr from-amber-400 to-orange-500 rounded-full flex items-center justify-center text-white shadow-lg shadow-orange-200 animate-friendly-pulse">
+                    <i class="fa-solid fa-utensils text-3xl"></i>
+                </div>
+                
+                <div class="space-y-1">
+                    <h1 class="text-4xl font-black text-orange-600 tracking-wider">食在難選</h1>
+                    <p class="text-[10px] font-bold text-orange-400 uppercase tracking-widest">Today's Delicious Decision</p>
+                </div>
+                
+                <div class="h-px bg-gradient-to-r from-transparent via-orange-200 to-transparent my-4"></div>
+                
+                <!-- 溫馨幽默的開場文案 -->
+                <p class="text-slate-600 text-sm leading-relaxed font-medium">
+                    「早上吃什麼？中午吃什麼？晚上吃什麼？」<br>
+                    人生最難的終極哲學問題，今天就交給命運！<br>
+                    我們準備了 <span class="text-orange-500 font-bold">50 款人氣美食</span>、支援時段、預算與地區篩選，<br>
+                    一鍵旋轉，立刻治好你的選擇困難症！
+                </p>
+                
+                <!-- 啟動按鈕 -->
+                <button onclick="startApp()" class="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:brightness-105 active:scale-95 text-white font-black py-4 px-6 rounded-2xl text-sm tracking-wider shadow-lg shadow-orange-200 transition-all flex items-center justify-center gap-2">
+                    <span>🌟 開啟今天的美食冒險</span>
+                    <i class="fa-solid fa-arrow-right animate-bounce-subtle"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 頂部精美導航欄 -->
+    <header class="bg-white/80 backdrop-blur-md border-b border-orange-100/50 sticky top-0 z-40 transition-all duration-300">
+        <div class="max-w-6xl mx-auto px-4 py-3 sm:py-4 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-tr from-amber-400 to-orange-400 rounded-full flex items-center justify-center text-white shadow-md shadow-orange-200">
+                    <i class="fa-solid fa-utensils text-sm sm:text-base"></i>
+                </div>
+                <div>
+                    <h1 class="font-black text-sm sm:text-xl tracking-wide text-orange-600">食在難選</h1>
+                    <p class="text-[10px] sm:text-xs text-orange-400/80 tracking-wider">TODAY'S DELICIOUS DECISION</p>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <span class="px-3 py-1 bg-amber-50 text-amber-700 rounded-full text-xs font-bold border border-amber-100/50 flex items-center gap-1.5 shadow-sm">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                    解決選擇困難
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主體內容區 -->
+    <main class="max-w-6xl mx-auto px-4 py-6 sm:py-10 w-full flex-grow">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            <!-- 左側：篩選控制器與輪盤 -->
+            <div class="lg:col-span-7 flex flex-col items-center bg-white rounded-3xl p-6 md:p-8 border border-orange-100/40 shadow-[0_12px_40px_rgba(253,237,222,0.4)] relative overflow-hidden">
+                <div class="absolute -top-12 -left-12 w-24 h-24 bg-orange-50 rounded-full opacity-60"></div>
+                <div class="absolute -bottom-12 -right-12 w-32 h-32 bg-amber-50 rounded-full opacity-60"></div>
+
+                <!-- 第一步：選取時段、預算與地區 -->
+                <div class="w-full relative z-10 space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-orange-100 pb-2">
+                        <div class="text-left">
+                            <span class="text-orange-500 font-bold text-xs uppercase tracking-widest block"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> STEP 1: 設定偏好</span>
+                            <h2 class="text-xl sm:text-2xl font-black text-slate-800">今天想要怎麼吃？</h2>
+                        </div>
+                        <!-- 只看星標切換器 -->
+                        <button onclick="toggleOnlyStarred()" id="btn-only-starred" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border border-amber-100 bg-amber-50/50 text-amber-600 hover:bg-amber-50 transition-all shadow-sm">
+                            <i class="fa-regular fa-star" id="icon-only-starred"></i>
+                            <span>只看星標</span>
+                        </button>
+                    </div>
+
+                    <!-- 篩選控制面板 -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 bg-orange-50/40 p-3 sm:p-4 rounded-2xl border border-orange-100/40">
+                        <!-- 時段篩選 -->
+                        <div class="space-y-2">
+                            <label class="text-xs font-black text-orange-700/80 flex items-center gap-1.5">
+                                <i class="fa-regular fa-clock"></i> 1. 餐點時段
+                            </label>
+                            <div class="grid grid-cols-2 gap-1.5">
+                                <button onclick="toggleFilter('time', 'breakfast')" id="btn-time-breakfast" class="btn-filter py-2 px-1.5 text-xs font-bold rounded-xl transition-all border flex items-center justify-center gap-1 bg-white border-orange-100 text-slate-600 hover:bg-orange-50/50">
+                                    ☀️ 早餐
+                                </button>
+                                <button onclick="toggleFilter('time', 'lunch')" id="btn-time-lunch" class="btn-filter py-2 px-1.5 text-xs font-bold rounded-xl transition-all border flex items-center justify-center gap-1 bg-orange-500 border-orange-500 text-white shadow-sm">
+                                    🍔 午餐
+                                </button>
+                                <button onclick="toggleFilter('time', 'dinner')" id="btn-time-dinner" class="btn-filter py-2 px-1.5 text-xs font-bold rounded-xl transition-all border flex items-center justify-center gap-1 bg-orange-500 border-orange-500 text-white shadow-sm">
+                                    🍜 晚餐
+                                </button>
+                                <button onclick="toggleFilter('time', 'snack')" id="btn-time-snack" class="btn-filter py-2 px-1.5 text-xs font-bold rounded-xl transition-all border flex items-center justify-center gap-1 bg-white border-orange-100 text-slate-600 hover:bg-orange-50/50">
+                                    🍢 宵夜
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 預算篩選 -->
+                        <div class="space-y-2">
+                            <label class="text-xs font-black text-orange-700/80 flex items-center gap-1.5">
+                                <i class="fa-solid fa-coins"></i> 2. 預算範圍
+                            </label>
+                            <div class="grid grid-cols-3 gap-1.5">
+                                <button onclick="toggleFilter('price', '1')" id="btn-price-1" class="btn-filter py-2 px-1 text-xs font-bold rounded-xl transition-all border flex flex-col items-center justify-center bg-orange-500 border-orange-500 text-white shadow-sm">
+                                    <span class="text-[10px] text-orange-100 font-normal">平價</span>
+                                    <span>$</span>
+                                </button>
+                                <button onclick="toggleFilter('price', '2')" id="btn-price-2" class="btn-filter py-2 px-1 text-xs font-bold rounded-xl transition-all border flex flex-col items-center justify-center bg-orange-500 border-orange-500 text-white shadow-sm">
+                                    <span class="text-[10px] text-orange-100 font-normal">中檔</span>
+                                    <span>$$</span>
+                                </button>
+                                <button onclick="toggleFilter('price', '3')" id="btn-price-3" class="btn-filter py-2 px-1 text-xs font-bold rounded-xl transition-all border flex flex-col items-center justify-center bg-orange-500 border-orange-500 text-white shadow-sm">
+                                    <span class="text-[10px] text-orange-100 font-normal">高檔</span>
+                                    <span>$$$</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 地區篩選 -->
+                        <div class="space-y-2">
+                            <label class="text-xs font-black text-orange-700/80 flex items-center gap-1.5">
+                                <i class="fa-solid fa-map-pin"></i> 3. 地區範圍 (單選)
+                            </label>
+                            <div class="grid grid-cols-2 gap-1.5">
+                                <button onclick="selectRegionFilter('all')" id="btn-region-all" class="btn-region py-2 px-1 text-xs font-bold rounded-xl transition-all border flex items-center justify-center gap-1 bg-orange-500 border-orange-500 text-white shadow-sm">
+                                    🌍 不限
+                                </button>
+                                <button onclick="selectRegionFilter('home')" id="btn-region-home" class="btn-region py-2 px-1 text-xs font-bold rounded-xl transition-all border flex items-center justify-center gap-1 bg-white border-orange-100 text-slate-600 hover:bg-orange-50/50">
+                                    🏠 住家
+                                </button>
+                                <button onclick="selectRegionFilter('work')" id="btn-region-work" class="btn-region py-2 px-1 text-xs font-bold rounded-xl transition-all border flex items-center justify-center gap-1 bg-white border-orange-100 text-slate-600 hover:bg-orange-50/50">
+                                    🏫 公司/學校
+                                </button>
+                                <button onclick="selectRegionFilter('market')" id="btn-region-market" class="btn-region py-2 px-1 text-xs font-bold rounded-xl transition-all border flex items-center justify-center gap-1 bg-white border-orange-100 text-slate-600 hover:bg-orange-50/50">
+                                    🛍️ 百貨商圈
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 當前具體定位輸入 (讓 Google Maps 搜尋精準到街道或行政區) -->
+                        <div class="space-y-1.5 md:col-span-3 border-t border-orange-100/55 pt-3 mt-1">
+                            <label class="text-xs font-black text-orange-700/80 flex items-center gap-1.5">
+                                <i class="fa-solid fa-street-view"></i> 4. 輸入當前具體地點 (可使一鍵搜尋更準確)
+                            </label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-orange-400">
+                                    <i class="fa-solid fa-location-dot text-xs"></i>
+                                </span>
+                                <input type="text" id="gps-address-input" placeholder="例如：板橋車站、公館、新莊、信義區...（留空則自動定位附近）" class="w-full bg-white border border-orange-200/80 rounded-xl pl-9 pr-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-orange-400">
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- 第二步：大輪盤主體 -->
+                <div class="relative z-10 flex flex-col items-center mt-6 w-full">
+                    <div class="text-center mb-1">
+                        <span class="text-orange-500 font-bold text-xs uppercase tracking-widest block"><i class="fa-solid fa-rotate mr-1"></i> STEP 2: 旋轉命運</span>
+                    </div>
+
+                    <!-- 轉盤實體容器 -->
+                    <div class="relative w-72 h-72 sm:w-80 sm:h-80 md:w-96 md:h-96 my-4">
+                        <!-- 指針 (位於頂部) -->
+                        <div class="absolute -top-1.5 left-1/2 -translate-x-1/2 z-30 filter drop-shadow-[0_4px_6px_rgba(251,146,60,0.4)] animate-bounce-subtle">
+                            <svg class="w-8 h-8 text-orange-500 fill-current" viewBox="0 0 24 24">
+                                <path d="M12 21l-8-14h16z"/>
+                            </svg>
+                        </div>
+
+                        <!-- 轉盤畫布 -->
+                        <canvas id="wheel-canvas" width="500" height="500" class="w-full h-full rounded-full border-8 border-orange-100 bg-orange-50/20 shadow-md cursor-pointer transition-transform duration-100"></canvas>
+                        
+                        <!-- 轉盤中心按鈕 (START) -->
+                        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+                            <button onclick="spinWheel()" id="btn-spin-center" class="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-orange-500 to-amber-500 rounded-full border-4 border-white shadow-lg text-white font-black text-[11px] sm:text-xs flex flex-col items-center justify-center gap-0.5 animate-friendly-pulse hover:brightness-105 active:scale-95 transition-all p-0">
+                                <span class="tracking-wider uppercase">START</span>
+                                <i class="fa-solid fa-play text-[9px]"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 當前輪盤有效項目數提示 -->
+                    <p class="text-xs text-slate-500/80 font-medium">
+                        篩選出 <span id="active-count" class="font-bold text-orange-500 text-sm">0</span> 項美味方案，準備好就點擊 <span class="bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded font-bold">START</span> 吧！
+                    </p>
+                </div>
+            </div>
+
+            <!-- 右側：美食清單管理員 -->
+            <div class="lg:col-span-5 bg-white rounded-3xl p-6 border border-orange-100/40 shadow-[0_12px_40px_rgba(253,237,222,0.4)] flex flex-col h-[520px] md:h-[620px]">
+                <div class="flex justify-between items-center pb-3 border-b border-orange-100/60 mb-4">
+                    <div class="flex items-center gap-1.5">
+                        <i class="fa-solid fa-folder-open text-orange-500"></i>
+                        <h3 class="font-black text-slate-800 text-sm sm:text-base">口袋美食清單</h3>
+                    </div>
+                    <button onclick="resetToDefault()" class="text-xs text-orange-500 hover:text-orange-600 font-bold transition-colors flex items-center gap-1">
+                        <i class="fa-solid fa-rotate-left"></i> 恢復預設
+                    </button>
+                </div>
+
+                <!-- 快速新增食品表單 -->
+                <form id="form-add-food" class="bg-orange-50/30 p-3 rounded-2xl border border-orange-100/30 mb-4 space-y-2.5">
+                    <div class="flex gap-2">
+                        <input type="text" id="new-food-name" placeholder="想吃點甚麼？(例: 起司蛋餅)" required maxlength="12" class="flex-grow bg-white border border-orange-100 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-orange-400">
+                        <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1 shadow-sm transition-all">
+                            <i class="fa-solid fa-plus"></i> 新增
+                        </button>
+                    </div>
+                    
+                    <!-- 時段與預算、地區微標記 -->
+                    <div class="flex flex-col gap-2 pt-1 border-t border-orange-100/30">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex gap-1">
+                                <span class="text-[10px] font-bold text-slate-400 mr-1 flex items-center">時段:</span>
+                                <label class="flex items-center gap-0.5 text-[10px] font-bold cursor-pointer bg-white px-1.5 py-0.5 rounded border border-orange-100 text-slate-600">
+                                    <input type="checkbox" id="add-breakfast" class="accent-orange-500 text-[10px]"> 早
+                                </label>
+                                <label class="flex items-center gap-0.5 text-[10px] font-bold cursor-pointer bg-white px-1.5 py-0.5 rounded border border-orange-100 text-slate-600">
+                                    <input type="checkbox" id="add-lunch" checked class="accent-orange-500 text-[10px]"> 中
+                                </label>
+                                <label class="flex items-center gap-0.5 text-[10px] font-bold cursor-pointer bg-white px-1.5 py-0.5 rounded border border-orange-100 text-slate-600">
+                                    <input type="checkbox" id="add-dinner" checked class="accent-orange-500 text-[10px]"> 晚
+                                </label>
+                                <label class="flex items-center gap-0.5 text-[10px] font-bold cursor-pointer bg-white px-1.5 py-0.5 rounded border border-orange-100 text-slate-600">
+                                    <input type="checkbox" id="add-snack" class="accent-orange-500 text-[10px]"> 宵
+                                </label>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <span class="text-[10px] font-bold text-slate-400">預算:</span>
+                                <select id="add-price" class="bg-white border border-orange-100 rounded text-[10px] px-1 py-0.5 font-bold text-slate-600 focus:outline-none focus:ring-1 focus:ring-orange-400">
+                                    <option value="1">平價 $</option>
+                                    <option value="2" selected>中價 $$</option>
+                                    <option value="3">高檔 $$$</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- 地區新增標記 -->
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[10px] font-bold text-slate-400">歸屬地區:</span>
+                            <select id="add-region" class="flex-grow bg-white border border-orange-100 rounded text-[10px] px-1.5 py-0.5 font-bold text-slate-600 focus:outline-none focus:ring-1 focus:ring-orange-400">
+                                <option value="home">🏠 住家附近</option>
+                                <option value="work" selected>🏫 公司/學校附近</option>
+                                <option value="market">🛍️ 百貨商圈</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- 菜單列表滾動區 -->
+                <div class="flex-grow overflow-y-auto pr-1 space-y-2" id="food-list-container">
+                    <!-- JS 動態生成 -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 頁腳版權聲明 -->
+    <footer class="bg-orange-50/20 border-t border-orange-100/30 py-4 text-center mt-10">
+        <p class="text-[11px] text-slate-400">食在難選：再也不用為吃飯與地緣犯難！ © 2026</p>
+    </footer>
+
+    <!-- 得獎彈窗 Modal -->
+    <div id="result-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-300">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-center shadow-[0_20px_50px_rgba(251,146,60,0.3)] border border-orange-100 transform scale-95 transition-transform duration-300 relative overflow-hidden">
+            <!-- 裝飾花邊 -->
+            <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400"></div>
+            
+            <div class="my-4">
+                <span class="inline-block px-3 py-1 bg-amber-50 text-amber-600 font-black text-xs rounded-full border border-amber-100/50 mb-2">🎉 命運決定好了！</span>
+                <h3 class="text-3xl font-black text-orange-600 tracking-tight my-2" id="modal-food-name">肉燥飯 + 貢丸湯</h3>
+                <div class="flex flex-col items-center gap-1.5 my-3">
+                    <div class="flex justify-center gap-1.5">
+                        <span id="modal-tag-time" class="text-[10px] font-bold px-2 py-0.5 bg-orange-50 text-orange-600 rounded">午餐 • 晚餐</span>
+                        <span id="modal-tag-price" class="text-[10px] font-bold px-2 py-0.5 bg-amber-50 text-amber-600 rounded">平價 $</span>
+                        <span id="modal-tag-starred" class="text-[10px] font-bold px-2 py-0.5 bg-amber-50 text-amber-600 rounded border border-amber-100 hidden">⭐ 星標</span>
+                    </div>
+                    <span id="modal-tag-region" class="text-[10px] font-bold px-2.5 py-0.5 bg-sky-50 text-sky-600 rounded">📍 公司/學校附近</span>
+                </div>
+                <p class="text-xs text-slate-500 px-4 leading-relaxed mt-4 mb-6 italic" id="modal-food-desc">
+                    「大口咬下滿滿的幸福，再配一碗暖呼呼的湯，簡直是人間極致！不用想了，今天就去吃這個！」
+                </p>
+            </div>
+
+            <!-- 操作按鈕 -->
+            <div class="space-y-2">
+                <a id="btn-google-maps" href="#" target="_blank" class="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:brightness-105 text-white font-black py-3 px-4 rounded-xl text-xs flex items-center justify-center gap-2 shadow-md shadow-orange-100 transition-all">
+                    <i class="fa-solid fa-map-location-dot"></i> 一鍵尋找附近的店
+                </a>
+                <button onclick="reSpin()" id="btn-respin" class="w-full bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold py-2.5 px-4 rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5 border border-slate-100">
+                    <i class="fa-solid fa-rotate-right text-slate-400"></i> 不合胃口？重轉一次
+                </button>
+                <button onclick="toggleModal(false)" id="btn-close-modal" class="w-full text-slate-400 hover:text-slate-500 text-[11px] pt-2 font-medium">
+                    我再想想
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 音效與核心邏輯 JS -->
+    <script>
+        // 0. 全域音效控制與儲存元件
+        let audioCtx = null;
+
+        // 1. 預設精選美食清單資料庫 (時段、預算、地區)
+        const DEFAULT_FOODS = [
+            // 早餐經典
+            { id: "1", name: "培根蛋餅加蛋", times: ["breakfast"], price: "1", regions: ["home", "work"], active: true, starred: true, desc: "早餐店大卡路里經典！再來一杯香濃的大冰奶，開啟活力的一天。" },
+            { id: "2", name: "美式培根三明治", times: ["breakfast"], price: "2", regions: ["work"], active: true, starred: false, desc: "烤得酥脆的吐司夾著焦香培根與起司，咬下去層次分明。" },
+            { id: "27", name: "卡拉雞腿堡配中冰奶", times: ["breakfast"], price: "2", regions: ["work", "home"], active: true, starred: true, desc: "酥脆微辣的雞腿排漢堡配上傳說中通腸的神仙大冰奶，早餐就是要這麼狂！" },
+            { id: "28", name: "黑胡椒鐵板麵加蛋", times: ["breakfast"], price: "1", regions: ["home", "work"], active: true, starred: false, desc: "鐵板滋滋作響，黑胡椒醬香氣四溢，配上煎到完美的半熟蛋，元氣爆棚！" },
+            { id: "29", name: "港式菠蘿油配凍檸茶", times: ["breakfast", "snack"], price: "2", regions: ["market"], active: true, starred: false, desc: "剛出爐熱騰騰的菠蘿麵包夾入冰涼的厚切奶油，冰火交融的極致誘惑！" },
+            { id: "30", name: "香煎蘿蔔糕加蛋", times: ["breakfast"], price: "1", regions: ["home", "work"], active: true, starred: false, desc: "外皮煎得金黃焦脆，內裡軟糯香甜，淋上特製蒜蓉醬油膏簡直是絕配。" },
+            { id: "31", name: "肉鬆蛋御飯糰配鮮乳", times: ["breakfast"], price: "1", regions: ["work"], active: true, starred: false, desc: "趕時間的經典好夥伴！香Q壽司米、香甜肉鬆與溫潤鮮乳，方便又營養。" },
+            { id: "32", name: "法式吐司佐楓糖漿", times: ["breakfast"], price: "2", regions: ["market", "home"], active: true, starred: false, desc: "蛋液浸泡飽滿的厚片吐司煎至金黃，淋上香甜楓糖，滿滿的幸福歐式晨光。" },
+            { id: "33", name: "豪華總匯三明治拼盤", times: ["breakfast"], price: "2", regions: ["work"], active: true, starred: false, desc: "層層疊疊的生菜、火腿、嫩蛋與起司，四個三角形一字排開，澎湃感十足！" },
+            { id: "34", name: "松露野菇歐姆蛋捲", times: ["breakfast"], price: "3", regions: ["market"], active: true, starred: false, desc: "奢華松露醬融合滑嫩歐姆蛋，咬開是爆漿起司與飽滿野菇，早餐界的高檔饗宴！" },
+            { id: "35", name: "燻雞起司熱壓吐司", times: ["breakfast"], price: "2", regions: ["work", "home"], active: true, starred: false, desc: "邊緣烤得香脆封口，撕開時起司牽絲可達數十公分，濃郁煙燻香氣四溢。" },
+            { id: "42", name: "虱目魚肚粥配油條", times: ["breakfast", "lunch"], price: "2", regions: ["home"], active: true, starred: false, desc: "新鮮無刺的虱目魚肚，油脂香甜、肉質細緻，搭配一碗清甜粥底，油條沾著湯汁吃，清晨最完美的台式溫柔。" },
+            { id: "47", name: "老字號鹹豆漿配燒餅", times: ["breakfast", "snack"], price: "1", regions: ["home"], active: true, starred: false, desc: "濃郁豆漿加入醋、醬油、蝦皮與蔥花，化成如茶碗蒸般的綿密質地，放上香酥油條碎，老饕靈魂早餐！" },
+            { id: "49", name: "招牌起司燒肉蛋吐司", times: ["breakfast"], price: "2", regions: ["home", "work"], active: true, starred: true, desc: "香煎醃漬入味的厚切豬排、爆漿太陽蛋、加上兩片濃郁切達起司，融化在烤得酥軟的鮮奶吐司中！" },
+            
+            // 正餐/午晚餐經典
+            { id: "3", name: "古早味滷肉飯", times: ["lunch", "dinner"], price: "1", regions: ["home", "work"], active: true, starred: true, desc: "滿滿膠質的滷汁澆在白飯上，搭配一顆半熟滷蛋，是無法拒絕的庶民美味！" },
+            { id: "4", name: "脆皮排骨便當", times: ["lunch", "dinner"], price: "1", regions: ["work", "home"], active: true, starred: false, desc: "酥脆多汁的現炸排骨配上三樣豐盛配菜，吃完飽足感爆棚。" },
+            { id: "5", name: "經典牛肉麵", times: ["lunch", "dinner"], price: "2", regions: ["home", "work"], active: true, starred: true, desc: "慢火細熬的紅燒湯頭，配上軟嫩入味的牛肉與帶勁拉麵，絕讚！" },
+            { id: "6", name: "日式豚骨拉麵", times: ["lunch", "dinner"], price: "2", regions: ["market"], active: true, starred: false, desc: "濃郁如牛奶般的豚骨湯頭，鋪上兩片軟嫩叉燒，極具儀式感。" },
+            { id: "7", name: "海鮮握壽司盤", times: ["lunch", "dinner"], price: "3", regions: ["market"], active: true, starred: false, desc: "油脂豐富的鮮魚肉與微酸醋飯交融，這是一頓犒賞自己的奢華日式饗宴。" },
+            { id: "8", name: "海鮮個人麻辣鍋", times: ["dinner", "snack"], price: "3", regions: ["market", "home"], active: true, starred: true, desc: "鴨血豆腐吸飽麻辣香湯，在稍微寒冷的夜晚，這是溫暖心靈的最佳歸宿。" },
+            { id: "10", name: "起司雙層牛肉堡", times: ["lunch", "dinner"], price: "2", regions: ["market", "work"], active: true, starred: false, desc: "融化的起司與厚實肉排雙重重擊！一口咬下，起司控絕對瘋狂。" },
+            { id: "11", name: "精緻健康輕食沙拉", times: ["lunch", "dinner"], price: "2", regions: ["work"], active: true, starred: false, desc: "高纖低脂的完美組合！搭配雞胸肉與堅果，健康、清爽又完全無負擔。" },
+            { id: "14", name: "港式飲茶點心", times: ["lunch", "dinner"], price: "3", regions: ["market"], active: true, starred: false, desc: "燒賣、蝦餃、叉燒包，精緻的小點在蒸籠裡散發著誘人香氣，今天就來場優雅的港式午茶吧！" },
+            { id: "15", name: "泰式酸辣椒麻雞飯", times: ["lunch", "dinner"], price: "2", regions: ["work", "home"], active: true, starred: false, desc: "外皮酥脆、肉質多汁的雞腿排，淋上酸辣帶勁的椒麻醬汁，超級開胃下飯！" },
+            { id: "17", name: "奶油培根義大利麵", times: ["lunch", "dinner"], price: "2", regions: ["market", "work"], active: true, starred: false, desc: "濃郁的白醬裹滿Q彈麵條，搭配焦香培根與滿滿起司粉，口口都是罪惡的幸福感。" },
+            { id: "18", name: "韓式石鍋拌飯", times: ["lunch", "dinner"], price: "2", regions: ["work"], active: true, starred: false, desc: "滋滋作響的石鍋裡有著滿滿的蔬菜與烤肉，攪拌均勻後那香脆的鍋巴，讓人一口接一口！" },
+            { id: "19", name: "飽滿多汁水餃盤", times: ["lunch", "dinner"], price: "1", regions: ["home", "work"], active: true, starred: false, desc: "皮薄餡多，咬下去還會爆汁！沾點醬油與烏醋，簡單卻最能撫慰飢餓的心靈。" },
+            { id: "20", name: "日式照燒雞肉丼", times: ["lunch", "dinner"], price: "2", regions: ["work"], active: true, starred: false, desc: "甜鹹適中的照燒醬香，滑嫩的雞肉與洋蔥絲在蛋液中交融，蓋在熱騰騰的白飯上，完美。" },
+            { id: "23", name: "法式厚切頂級牛排", times: ["dinner"], price: "3", regions: ["market"], active: true, starred: false, desc: "主廚精控熟度，外焦內嫩鎖住滿滿肉汁，搭配煎香大蒜與海鹽，今天就是要好好犒賞自己！" },
+            { id: "24", name: "香烤夏威夷披薩", times: ["lunch", "dinner"], price: "2", regions: ["market", "home"], active: true, starred: false, desc: "起司拉絲的極致誘惑！酸甜鳳梨與鹹香火腿的經典搭配，派對氛圍感直接拉滿。" },
+            { id: "37", name: "絲滑海南雞飯", times: ["lunch", "dinner"], price: "2", regions: ["work", "market"], active: true, starred: false, desc: "軟嫩滑香的低溫慢熟雞肉，搭配吸飽雞油與高湯的香米飯，淋上特製蔥油跟辣椒醬，簡直一口升天！" },
+            { id: "38", name: "印度咖哩烤餅套餐", times: ["lunch", "dinner"], price: "2", regions: ["market"], active: true, starred: false, desc: "濃郁香料調配的慢燉咖哩，撕下一塊剛出爐、帶有炭香與焦脆的Q彈烤餅沾著吃，層次豐富到難以言喻。" },
+            { id: "40", name: "港式臘味雙拼便當", times: ["lunch", "dinner"], price: "2", regions: ["work"], active: true, starred: false, desc: "油亮焦香的蜜汁叉燒與外脆內嫩的明爐燒鴨，淋上特調鹹甜醬汁，搭配半顆鹹蛋，美味度直擊靈魂！" },
+            { id: "41", name: "爆汁絲瓜蝦仁小籠包", times: ["lunch", "dinner"], price: "2", regions: ["market"], active: true, starred: false, desc: "薄如蟬翼的麵皮，裹著鮮甜多汁的絲瓜與飽滿蝦仁，輕輕咬開，滿滿的湯汁瞬間在口中爆發。" },
+            { id: "43", name: "經典酸菜魚雙人份", times: ["lunch", "dinner"], price: "3", regions: ["market"], active: true, starred: false, desc: "麻辣酸爽、鮮美無比！滑嫩的魚片在濃郁酸菜高湯中翻滾，鋪滿花椒與乾辣椒，開胃下飯的究極武器！" },
+            { id: "44", name: "頂級日式和牛燒肉", times: ["dinner"], price: "3", regions: ["market"], active: true, starred: true, desc: "大理石般完美油花的和牛，上烤網兩面微炙五秒即融，入口即化，油脂甘甜，極致奢華的味覺饗宴！" },
+            { id: "48", name: "炙燒明太子牛肉丼", times: ["lunch", "dinner"], price: "2", regions: ["work", "market"], active: true, starred: false, desc: "油花適中的雪花牛加上炙燒香濃的明太子醬，海陸雙重鮮味重擊，配上生蛋黃拌飯，香濃到不可思議！" },
+            
+            // 宵夜/點心/街頭
+            { id: "9", name: "鹽酥雞大亂鬥", times: ["snack"], price: "1", regions: ["home"], active: true, starred: true, desc: "九層塔香氣沖天！配上甜不辣與四季豆，今晚的熱量靈魂已被救贖。" },
+            { id: "12", name: "清粥小菜與紅燒肉", times: ["breakfast", "snack"], price: "1", regions: ["home"], active: true, starred: false, desc: "暖胃無負擔的溫柔夜宵，配上麵筋、豆腐乳跟紅燒肉，清淡又有滋有味。" },
+            { id: "13", name: "炭烤燒餅夾油條", times: ["breakfast"], price: "1", regions: ["home", "work"], active: true, starred: false, desc: "傳統中式早餐的靈魂組合！外酥內軟，配上一碗溫熱的無糖豆漿，簡直絕配。" },
+            { id: "16", name: "經典台式加熱滷味", times: ["dinner", "snack"], price: "1", regions: ["home", "work"], active: true, starred: false, desc: "熱氣騰騰的特製滷汁，甜不辣、王子麵、高麗菜和豆腐，今晚想要來點暖胃又放鬆的宵夜嗎？" },
+            { id: "21", name: "炭火多汁烤肉串", times: ["dinner", "snack"], price: "2", regions: ["home", "market"], active: true, starred: false, desc: "帶著炭火焦香的牛羊豬肉串，刷上特製醬料，撒上孜然粉，今晚來點居酒屋氛圍吧！" },
+            { id: "22", name: "綜合鮮奶豆花", times: ["snack"], price: "1", regions: ["home", "work"], active: true, starred: false, desc: "滑嫩香甜的傳統豆花，鋪上粉圓、芋圓與紅豆，淋上濃郁鮮奶，是午後或宵夜的最佳療癒甜點。" },
+            { id: "25", name: "剝皮辣椒雞湯麵", times: ["dinner", "snack"], price: "2", regions: ["home"], active: true, starred: false, desc: "香菇的鮮甜與剝皮辣椒的微辣微甘完美融合，暖身又暖心，是滋補元氣的湯品首選。" },
+            { id: "26", name: "台式大腸包小腸", times: ["snack"], price: "1", regions: ["home"], active: true, starred: false, desc: "炭烤糯米腸夾著噴汁黑豬肉香腸，搭配酸菜、蒜片與小黃瓜，這就是最接地氣的街頭美味！" },
+            { id: "36", name: "香脆多汁炸雞排配珍奶", times: ["lunch", "dinner", "snack"], price: "2", regions: ["home", "work"], active: true, starred: true, desc: "邪惡度破表的萬惡組合！金黃酥脆的外皮、咬下會噴汁的雞排，配上珍珠鮮奶茶，今天熱量超標又怎樣！" },
+            { id: "39", name: "金牌大腸蚵仔麵線", times: ["lunch", "dinner", "snack"], price: "1", regions: ["home", "work"], active: true, starred: false, desc: "柴魚高湯勾芡出的滑順麵線，鋪上滷得透爛的大腸與飽滿肥美的大鮮蚵，加一匙蒜泥與黑醋，這就是台味浪漫。" },
+            { id: "45", name: "炭烤香酥肉夾饃", times: ["lunch", "dinner", "snack"], price: "1", regions: ["home", "work"], active: true, starred: false, desc: "千層酥脆的現烤饃餅，夾入慢火燉煮到軟爛入味的青椒碎豬肉，一口咬下，外脆內軟、肥而不膩！" },
+            { id: "46", name: "川味麻辣乾拌麵", times: ["lunch", "dinner", "snack"], price: "1", regions: ["home", "work"], active: true, starred: false, desc: "帶勁的關廟波浪麵，吸附著花椒、麻油與特調中藥老抽，香辣帶勁，微麻的餘韻讓人欲罷不能！" },
+            { id: "50", name: "黑糖珍珠刨冰", times: ["snack"], price: "1", regions: ["home", "market"], active: true, starred: false, desc: "古法熬製的黑糖蜜，淋在綿密刨冰上，鋪上大顆Ｑ彈珍珠、黑糖粉粿與手工芋圓，午後消暑第一選擇。" }
+        ];
+
+        // 2. 應用程式全域狀態
+        let foods = JSON.parse(localStorage.getItem('foods_list')) || [...DEFAULT_FOODS];
+        
+        let filterState = {
+            time: { breakfast: false, lunch: true, dinner: true, snack: false },
+            price: { "1": true, "2": true, "3": true },
+            region: 'all', // 當前篩選地區 (all / home / work / market)
+            onlyStarred: false // 最愛（星標）過濾狀態
+        };
+
+        // 歡迎開場畫面進入主程式函式
+        function startApp() {
+            // 1. 初始化 AudioContext 並播放一段明快悅耳的開場合弦
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const now = audioCtx.currentTime;
+                [523.25, 659.25, 783.99].forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+                    
+                    gain.gain.setValueAtTime(0, now + idx * 0.08);
+                    gain.gain.linearRampToValueAtTime(0.12, now + idx * 0.08 + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.005, now + idx * 0.08 + 0.3);
+                    
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    
+                    osc.start(now + idx * 0.08);
+                    osc.stop(now + idx * 0.08 + 0.3);
+                });
+            } catch (e) {
+                console.log("Welcome sound playback bypassed:", e);
+            }
+
+            // 2. 漸隱開場畫面
+            const welcomeScreen = document.getElementById('welcome-screen');
+            if (welcomeScreen) {
+                welcomeScreen.classList.add('opacity-0', 'pointer-events-none');
+                setTimeout(() => {
+                    welcomeScreen.classList.add('hidden');
+                }, 700);
+            }
+        }
+
+        // Web Audio API 音效產生器
+        function playTickSound() {
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(650, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.06);
+                
+                gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.06);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.06);
+            } catch (e) {
+                console.log("Audio feedback error:", e);
+            }
+        }
+
+        // 中獎歡慶音效
+        function playSuccessSound() {
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const now = audioCtx.currentTime;
+                const notes = [261.63, 329.63, 392.00, 523.25];
+                notes.forEach((freq, index) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + index * 0.08);
+                    
+                    gain.gain.setValueAtTime(0, now + index * 0.08);
+                    gain.gain.linearRampToValueAtTime(0.15, now + index * 0.08 + 0.03);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + index * 0.08 + 0.35);
+                    
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    
+                    osc.start(now + index * 0.08);
+                    osc.stop(now + index * 0.08 + 0.35);
+                });
+            } catch (e) {
+                console.log("Audio victory feedback error:", e);
+            }
+        }
+
+        // 4. 轉盤核心畫布與物理動畫變數
+        let canvas = null;
+        let ctx = null;
+        
+        let currentAngle = 0; // 當前弧度
+        let spinVelocity = 0; // 旋轉速度
+        const friction = 0.985; // 阻尼係數 (控制轉多久)
+        let isSpinning = false;
+        let lastTickAngle = 0; // 用於計算音效間隔
+
+        // 馬卡龍色系配色組
+        const colors = [
+            '#FFB7B2', // 草莓牛奶粉
+            '#FFDAC1', // 蜜桃泡芙
+            '#FFE5B4', // 起司芒果黃
+            '#E2F0CB', // 薄荷青豆
+            '#B5EAD7', // 酪梨開心果
+            '#C7CEEA', // 汽水薰衣草紫
+            '#FFC6FF', // 櫻花粉
+            '#9BF6FF'  // 晴空藍
+        ];
+
+        // 5. 動態過濾符合目前篩選條件的美食清單
+        function getFilteredFoods() {
+            return foods.filter(food => {
+                // 1. 需在選中清單中為開啟狀態 (active)
+                if (!food.active) return false;
+
+                // 2. 喜愛項目（星標）過濾
+                if (filterState.onlyStarred && !food.starred) return false;
+
+                // 3. 時段檢驗：只要食物具備任一個已勾選的時段即符合
+                let hasTimeMatch = false;
+                for (let key in filterState.time) {
+                    if (filterState.time[key] && food.times.includes(key)) {
+                        hasTimeMatch = true;
+                        break;
+                    }
+                }
+                if (!hasTimeMatch) return false;
+
+                // 4. 預算檢驗：食物的價格等級需為已勾選的價格
+                if (!filterState.price[food.price]) return false;
+
+                // 5. 地區檢驗：如果篩選非「all」，則食物必須包含該地區標記
+                if (filterState.region !== 'all') {
+                    if (!food.regions || !food.regions.includes(filterState.region)) return false;
+                }
+
+                return true;
+            });
+        }
+
+        // 6. 渲染/重繪轉盤
+        function drawWheel() {
+            if (!canvas || !ctx) return;
+            const activeFoods = getFilteredFoods();
+            const count = activeFoods.length;
+            document.getElementById('active-count').textContent = count;
+
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            const radius = cx - 12;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (count === 0) {
+                // 畫一個空白/引導設計
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
+                ctx.fillStyle = '#f7f3eb';
+                ctx.fill();
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = '#fad3b2';
+                ctx.stroke();
+
+                ctx.fillStyle = '#f59e0b';
+                ctx.font = 'bold 18px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('無符合此篩選條件的美食！', cx, cy);
+                ctx.restore();
+                return;
+            }
+
+            const arcAngle = (2 * Math.PI) / count;
+
+            for (let i = 0; i < count; i++) {
+                const angle = currentAngle + i * arcAngle;
+                ctx.save();
+                
+                // 畫扇形色塊
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.arc(cx, cy, radius, angle, angle + arcAngle);
+                ctx.closePath();
+                ctx.fillStyle = colors[i % colors.length];
+                ctx.fill();
+                
+                // 畫細白邊界線
+                ctx.lineWidth = 1.5;
+                ctx.strokeStyle = '#ffffff';
+                ctx.stroke();
+
+                // 填入食物名稱
+                ctx.translate(cx, cy);
+                ctx.rotate(angle + arcAngle / 2);
+                
+                ctx.fillStyle = '#5c4033'; // 優雅深褐字體
+                ctx.font = 'bold 16px sans-serif';
+                ctx.textAlign = 'right';
+                ctx.textBaseline = 'middle';
+
+                // 名字如果太長就縮小字體
+                let name = activeFoods[i].name;
+                if (name.length > 6) {
+                    ctx.font = 'bold 12px sans-serif';
+                }
+                ctx.fillText(name, radius - 28, 0);
+                
+                ctx.restore();
+            }
+
+            // 繪製轉盤外框裝飾
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
+            ctx.lineWidth = 6;
+            ctx.strokeStyle = '#fed7aa';
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // 7. 點擊「START」開始旋轉
+        function spinWheel() {
+            if (isSpinning) return;
+            const activeFoods = getFilteredFoods();
+            if (activeFoods.length === 0) {
+                alertModal("請調整篩選設定，確保至少有一項符合的美食！");
+                return;
+            }
+
+            // 給予大隨機初始速度與隨機多圈旋轉
+            spinVelocity = 0.35 + Math.random() * 0.3; 
+            isSpinning = true;
+            lastTickAngle = currentAngle;
+            requestAnimationFrame(animateSpin);
+        }
+
+        // 8. 旋轉物理模擬循環
+        function animateSpin() {
+            if (!isSpinning) return;
+
+            currentAngle += spinVelocity;
+            spinVelocity *= friction;
+
+            // 偵測指針跨過扇形邊界，播放噠噠聲
+            const activeFoods = getFilteredFoods();
+            const count = activeFoods.length;
+            if (count > 0) {
+                const arcAngle = (2 * Math.PI) / count;
+                // 計算目前指針碰到的扇形 index (指針在最上方 -PI/2)
+                const relativeAngle = (1.5 * Math.PI - currentAngle) % (2 * Math.PI);
+                const positiveAngle = relativeAngle < 0 ? relativeAngle + 2 * Math.PI : relativeAngle;
+                const lastRelativeAngle = (1.5 * Math.PI - lastTickAngle) % (2 * Math.PI);
+                const lastPositiveAngle = lastRelativeAngle < 0 ? lastRelativeAngle + 2 * Math.PI : lastRelativeAngle;
+
+                const currentWedge = Math.floor(positiveAngle / arcAngle);
+                const lastWedge = Math.floor(lastPositiveAngle / arcAngle);
+
+                if (currentWedge !== lastWedge && spinVelocity > 0.005) {
+                    playTickSound();
+                }
+            }
+
+            lastTickAngle = currentAngle;
+            drawWheel();
+
+            if (spinVelocity < 0.002) {
+                isSpinning = false;
+                spinVelocity = 0;
+                announceWinner();
+            } else {
+                requestAnimationFrame(animateSpin);
+            }
+        }
+
+        // 9. 結算勝利者並彈窗
+        function announceWinner() {
+            const activeFoods = getFilteredFoods();
+            if (activeFoods.length === 0) return;
+
+            const count = activeFoods.length;
+            const arcAngle = (2 * Math.PI) / count;
+
+            // 指針定位在頂端（-90度 或 270度，即 1.5 * Math.PI）
+            const targetAngle = (1.5 * Math.PI - currentAngle) % (2 * Math.PI);
+            const correctedAngle = targetAngle < 0 ? targetAngle + 2 * Math.PI : targetAngle;
+            const winningIndex = Math.floor(correctedAngle / arcAngle) % count;
+            
+            const winner = activeFoods[winningIndex];
+
+            // 播放慶祝和弦音效
+            playSuccessSound();
+
+            // 觸發彩帶拉炮
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#FFB7B2', '#FFDAC1', '#FFC6FF', '#9BF6FF', '#ff9f43']
+            });
+
+            // 填充彈窗資訊
+            document.getElementById('modal-food-name').textContent = winner.name;
+            document.getElementById('modal-food-desc').textContent = winner.desc || "「大口咬下滿滿的幸福，再配一碗暖呼呼的湯，簡直是人間極致！不用想了，今天就去吃這個！」";
+            
+            // 處理時段標籤
+            const timeMap = { breakfast: "早餐", lunch: "午餐", dinner: "晚餐", snack: "宵夜" };
+            const timeLabels = winner.times.map(t => timeMap[t] || t).join(" • ");
+            document.getElementById('modal-tag-time').textContent = timeLabels;
+
+            // 處理價格標籤
+            const priceMap = { "1": "平價 $", "2": "中檔 $$", "3": "高檔 $$$" };
+            document.getElementById('modal-tag-price').textContent = priceMap[winner.price] || "$";
+
+            // 處理喜愛標籤（星標）
+            const starTag = document.getElementById('modal-tag-starred');
+            if (winner.starred) {
+                starTag.classList.remove('hidden');
+            } else {
+                starTag.classList.add('hidden');
+            }
+
+            // 處理地區標籤
+            const regionMap = { home: "住家附近", work: "公司/學校附近", market: "百貨商圈" };
+            const primaryRegion = winner.regions && winner.regions.length > 0 ? regionMap[winner.regions[0]] : "自訂地點";
+            document.getElementById('modal-tag-region').textContent = `📍 ${primaryRegion}`;
+
+            // 獲取當前自訂 GPS 具體地點輸入 (關鍵精準搜尋點)
+            const gpsAddressInput = document.getElementById('gps-address-input');
+            const customLocation = gpsAddressInput ? gpsAddressInput.value.trim() : '';
+
+            // 拼接 Google Maps 導航與精準搜尋查詢條件
+            let mapSearchQuery = '';
+            if (customLocation) {
+                mapSearchQuery = `${customLocation} 附近的${winner.name}`;
+            } else {
+                mapSearchQuery = `附近的${winner.name}`;
+            }
+            const mapQuery = encodeURIComponent(mapSearchQuery);
+            document.getElementById('btn-google-maps').href = `https://www.google.com/maps/search/?api=1&query=${mapQuery}`;
+
+            // 彈出視窗
+            toggleModal(true);
+        }
+
+        // 10. 時段與價格過濾按鈕開關
+        function toggleFilter(type, value) {
+            filterState[type][value] = !filterState[type][value];
+            
+            // UI 更新
+            const btn = document.getElementById(`btn-${type}-${value}`);
+            if (filterState[type][value]) {
+                if (type === 'time') {
+                    btn.className = "btn-filter py-2 px-1.5 text-xs font-bold rounded-xl transition-all border flex items-center justify-center gap-1 bg-orange-500 border-orange-500 text-white shadow-sm";
+                } else {
+                    btn.className = "btn-filter py-2 px-1 text-xs font-bold rounded-xl transition-all border flex flex-col items-center justify-center bg-orange-500 border-orange-500 text-white shadow-sm";
+                }
+            } else {
+                if (type === 'time') {
+                    btn.className = "btn-filter py-2 px-1.5 text-xs font-bold rounded-xl transition-all border flex items-center justify-center gap-1 bg-white border-orange-100 text-slate-600 hover:bg-orange-50/50";
+                } else {
+                    btn.className = "btn-filter py-2 px-1 text-xs font-bold rounded-xl transition-all border flex flex-col items-center justify-center bg-white border-orange-100 text-slate-600 hover:bg-orange-50/50";
+                }
+            }
+
+            drawWheel();
+        }
+
+        // 10.5 單選地區篩選處理
+        function selectRegionFilter(regionKey) {
+            filterState.region = regionKey;
+            
+            // 重新整理所有地區按鈕的視覺
+            const regionButtons = document.querySelectorAll('.btn-region');
+            regionButtons.forEach(btn => {
+                const id = btn.id;
+                const targetId = `btn-region-${regionKey}`;
+                if (id === targetId) {
+                    btn.className = "btn-region py-2 px-1 text-xs font-bold rounded-xl transition-all border flex items-center justify-center gap-1 bg-orange-500 border-orange-500 text-white shadow-sm";
+                } else {
+                    btn.className = "btn-region py-2 px-1 text-xs font-bold rounded-xl transition-all border flex items-center justify-center gap-1 bg-white border-orange-100 text-slate-600 hover:bg-orange-50/50";
+                }
+            });
+
+            drawWheel();
+        }
+
+        // 切換星標篩選
+        function toggleOnlyStarred() {
+            filterState.onlyStarred = !filterState.onlyStarred;
+            const btn = document.getElementById('btn-only-starred');
+            const icon = document.getElementById('icon-only-starred');
+            
+            if (filterState.onlyStarred) {
+                btn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border border-amber-300 bg-amber-500 text-white hover:bg-amber-600 transition-all shadow-sm";
+                icon.className = "fa-solid fa-star text-white animate-pulse";
+            } else {
+                btn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border border-amber-100 bg-amber-50/50 text-amber-600 hover:bg-amber-50 transition-all shadow-sm";
+                icon.className = "fa-regular fa-star";
+            }
+
+            drawWheel();
+        }
+
+        // 切換特定美食的星標狀態
+        function toggleFoodStarred(id) {
+            foods = foods.map(f => f.id === id ? { ...f, starred: !f.starred } : f);
+            renderFoodList();
+        }
+
+        // 11. 自訂清單管理 (新增、刪除、清單渲染)
+        function renderFoodList() {
+            const container = document.getElementById('food-list-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            foods.forEach((food) => {
+                const card = document.createElement('div');
+                card.className = `flex justify-between items-center bg-white p-3 rounded-2xl border transition-all duration-300 ${
+                    food.active ? 'border-orange-100 shadow-sm opacity-100' : 'border-slate-100 opacity-60 bg-slate-50/50'
+                }`;
+
+                const timeMap = { breakfast: "早", lunch: "中", dinner: "晚", snack: "宵" };
+                const timeBadges = food.times.map(t => timeMap[t] || t).join("");
+                const priceBadge = "$".repeat(parseInt(food.price));
+                
+                // 地區縮寫/標誌
+                const regionMap = { home: "🏠 住家", work: "🏫 公司", market: "🛍️ 百貨" };
+                const regionBadge = food.regions && food.regions.length > 0 ? (regionMap[food.regions[0]] || "📍 自訂") : "🌍 不限";
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-2.5 flex-grow mr-2 overflow-hidden">
+                        <!-- 切換啟用開關 -->
+                        <button onclick="toggleFoodActive('${food.id}')" class="focus:outline-none flex-shrink-0">
+                            <i class="fa-solid ${food.active ? 'fa-circle-check text-orange-500' : 'fa-circle text-slate-300'} text-lg"></i>
+                        </button>
+                        <!-- 喜愛星標切換 -->
+                        <button onclick="toggleFoodStarred('${food.id}')" class="focus:outline-none flex-shrink-0 text-amber-500 hover:scale-110 transition-transform px-1">
+                            <i class="${food.starred ? 'fa-solid fa-star' : 'fa-regular fa-star text-slate-300'} text-sm"></i>
+                        </button>
+                        <div class="flex flex-col truncate">
+                            <span class="text-xs font-bold text-slate-800 ${food.active ? '' : 'line-through text-slate-400'} truncate">${food.name}</span>
+                            <div class="flex flex-wrap gap-1 mt-1">
+                                <span class="text-[9px] font-bold text-orange-400 bg-orange-50 px-1 rounded">${timeBadges}</span>
+                                <span class="text-[9px] font-bold text-amber-500 bg-amber-50 px-1 rounded">${priceBadge}</span>
+                                <span class="text-[9px] font-bold text-sky-500 bg-sky-50 px-1 rounded">${regionBadge}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 刪除按鈕 -->
+                    <button onclick="deleteFoodItem('${food.id}')" class="text-slate-300 hover:text-rose-500 p-1.5 transition-colors focus:outline-none">
+                        <i class="fa-regular fa-trash-can text-sm"></i>
+                    </button>
+                `;
+                container.appendChild(card);
+            });
+
+            saveToStorage();
+            drawWheel();
+        }
+
+        // 切換單一美食啟用狀態
+        function toggleFoodActive(id) {
+            foods = foods.map(f => f.id === id ? { ...f, active: !f.active } : f);
+            renderFoodList();
+        }
+
+        // 刪除美食
+        function deleteFoodItem(id) {
+            foods = foods.filter(f => f.id !== id);
+            renderFoodList();
+        }
+
+        // 恢復預設美食資料庫
+        function resetToDefault() {
+            foods = [...DEFAULT_FOODS];
+            renderFoodList();
+        }
+
+        // 儲存至本地快取
+        function saveToStorage() {
+            localStorage.setItem('foods_list', JSON.stringify(foods));
+        }
+
+        // 彈窗顯示/隱藏
+        function toggleModal(show) {
+            const modal = document.getElementById('result-modal');
+            if (!modal) return;
+            const inner = modal.querySelector('div');
+            if (show) {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                inner.classList.remove('scale-95');
+                inner.classList.add('scale-100');
+            } else {
+                modal.classList.add('opacity-0', 'pointer-events-none');
+                inner.classList.remove('scale-100');
+                inner.classList.add('scale-95');
+            }
+        }
+
+        // 完美修復重轉邏輯
+        function reSpin() {
+            toggleModal(false); // 先關閉彈窗回到主盤
+            setTimeout(() => {
+                spinWheel();    // 延遲等遮罩退場後流暢轉動
+            }, 180);
+        }
+
+        // 自訂警告提示彈窗
+        function alertModal(msg) {
+            document.getElementById('modal-food-name').textContent = "⚠️ 注意";
+            document.getElementById('modal-food-desc').textContent = msg;
+            document.getElementById('modal-tag-time').textContent = "提示";
+            document.getElementById('modal-tag-price').textContent = "INFO";
+            document.getElementById('modal-tag-region').textContent = "提醒";
+            document.getElementById('btn-google-maps').href = "javascript:void(0)";
+            document.getElementById('btn-google-maps').onclick = () => toggleModal(false);
+            document.getElementById('btn-google-maps').innerHTML = "我知道了";
+            toggleModal(true);
+        }
+
+        // 12. 網頁加載初始化
+        window.addEventListener('DOMContentLoaded', () => {
+            // 解析 Canvas 與 Context
+            canvas = document.getElementById('wheel-canvas');
+            ctx = canvas.getContext('2d');
+
+            // 綁定手勢/點擊 Canvas 也可以進行旋轉
+            canvas.addEventListener('click', () => {
+                if (!isSpinning) spinWheel();
+            });
+
+            // 載入自訂當前具體地點
+            const gpsAddressInput = document.getElementById('gps-address-input');
+            if (gpsAddressInput) {
+                gpsAddressInput.value = localStorage.getItem('foods_custom_gps_address') || '';
+                gpsAddressInput.addEventListener('input', (e) => {
+                    localStorage.setItem('foods_custom_gps_address', e.target.value.trim());
+                });
+            }
+
+            // 新增美食表單提交事件
+            document.getElementById('form-add-food').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const nameInput = document.getElementById('new-food-name');
+                const name = nameInput.value.trim();
+                if (!name) return;
+
+                // 收集時段 checkbox 狀態
+                const times = [];
+                if (document.getElementById('add-breakfast').checked) times.push('breakfast');
+                if (document.getElementById('add-lunch').checked) times.push('lunch');
+                if (document.getElementById('add-dinner').checked) times.push('dinner');
+                if (document.getElementById('add-snack').checked) times.push('snack');
+
+                // 檢查是否至少勾選一個時段
+                if (times.length === 0) {
+                    alertModal("請至少為新美食勾選一個合適的時段喔！");
+                    return;
+                }
+
+                const price = document.getElementById('add-price').value;
+                const region = document.getElementById('add-region').value;
+
+                // 新增至清單
+                const newFood = {
+                    id: Date.now().toString(),
+                    name: name,
+                    times: times,
+                    price: price,
+                    regions: [region],
+                    active: true,
+                    starred: false,
+                    desc: `「主廚精選特製：這道 ${name} 絕對是你的最佳靈魂伴侶，別猶豫了！」`
+                };
+
+                foods.unshift(newFood);
+                renderFoodList();
+
+                // 重設輸入框
+                nameInput.value = '';
+                nameInput.focus();
+            });
+
+            // 初始化首次渲染與繪製
+            renderFoodList();
+        });
+
+        // 💡 關鍵修復：手動將函式綁定到 window 全域，避免 inline onclick 產生 ReferenceError 錯誤
+        window.startApp = startApp;
+        window.spinWheel = spinWheel;
+        window.reSpin = reSpin;
+        window.toggleFilter = toggleFilter;
+        window.selectRegionFilter = selectRegionFilter;
+        window.toggleOnlyStarred = toggleOnlyStarred;
+        window.toggleFoodActive = toggleFoodActive;
+        window.toggleFoodStarred = toggleFoodStarred;
+        window.deleteFoodItem = deleteFoodItem;
+        window.resetToDefault = resetToDefault;
+        window.toggleModal = toggleModal;
+    </script>
+</body>
+</html>
